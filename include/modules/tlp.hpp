@@ -19,7 +19,7 @@ class TLP : public ALabel {
     const std::string DEFAULT_FORMAT_ALT = "{status} ({mode})";
 
     std::string tlp_request(std::string); // static
-    auto update_status(); // static
+    void update_status(); // static
     std::string tlpstat_tostring(bool tlpstat); // static
     std::string tlpstat_tostring(); // static
     std::string tlpmode_tostring(bool tlpmode); // static

@@ -24,7 +24,7 @@ std::string waybar::modules::TLP::tlp_request(std::string command) {
   return res.out;
 }
 
-auto waybar::modules::TLP::update_status() {
+void waybar::modules::TLP::update_status() {
   std::string status = tlp_request("tlp-stat -m -q");
   if( status == "AC" ) {
     tlpstat_  = true;
