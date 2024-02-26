@@ -2,7 +2,7 @@
 #include "util/command.hpp"
 
 waybar::modules::TLP::TLP(const std::string& id, const Json::Value& config)
-    : waybar::ALabel(config, "tlp", id, DEFAULT_FORMAT, 2, false, false, false)
+    : waybar::ALabel(config, "tlp", id, DEFAULT_FORMAT, 2, false, false, false), tlpstat_(false), tlpmode_(false)
 {
   tlp_request("tlp-stat --version");
 
@@ -87,7 +87,7 @@ auto waybar::modules::TLP::update() -> void {
     label_.set_tooltip_markup(tooltip_format);
   }
   // Call parent update
-  waybar::ALabel::update();
+  ALabel::update();
 }
 
 void waybar::modules::TLP::toggleStatus() {
@@ -110,6 +110,6 @@ bool waybar::modules::TLP::handleToggle(GdkEventButton* const& e) {
     toggleStatus();
   }
 
-  waybar::ALabel::handleToggle(e);
+  ALabel::handleToggle(e);
   return true;
 }
