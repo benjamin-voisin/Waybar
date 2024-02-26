@@ -10,8 +10,10 @@ waybar::modules::TLP::TLP(const std::string& id, const Json::Value& config)
   event_box_.signal_button_press_event().connect(
       sigc::mem_fun(*this, &TLP::handleToggle));
 
-  // Emit at least once
-  dp.emit();
+  thread_ = [this] {
+    dp.emit();
+    thread_.sleep_for(interval_);
+  };
 }
 
 waybar::modules::TLP::~TLP() {}
@@ -101,29 +103,19 @@ std::string waybar::modules::TLP::format(std::string format) {
 
 auto waybar::modules::TLP::update() -> void {
   update_status();
-
   update_style();
-
 }
 
 void waybar::modules::TLP::toggleStatus() {
   if (tlpmode_) {
     // if on MANUAL mode put AUTO
-    tlpmode_ = false;
-    update_style();
     tlp_request("sudo tlp start");
   } else {
     if (tlpstat_) {
       // if on AUTO AC mode put MANUAL BATTERY mode
-      tlpstat_ = true;
-      tlpmode_ = true;
-      update_style();
       tlp_request("sudo tlp bat");
     } else {
       // if on AUTO BATTERY mode put MANUAL AC mode
-      tlpstat_ = false;
-      tlpmode_ = true;
-      update_style();
       tlp_request("sudo tlp ac");
     }
   }
@@ -134,7 +126,6 @@ bool waybar::modules::TLP::handleToggle(GdkEventButton* const& e) {
     toggleStatus();
   }
 
-  update();
   ALabel::handleToggle(e);
   return true;
 }

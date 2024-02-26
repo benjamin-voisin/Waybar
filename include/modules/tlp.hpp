@@ -1,7 +1,7 @@
 #pragma once
 
 #include "ALabel.hpp"
-
+#include "util/sleeper_thread.hpp"
 
 namespace waybar::modules {
 
@@ -14,6 +14,7 @@ class TLP : public ALabel {
   private:
     bool tlpstat_;
     bool tlpmode_;
+    util::SleeperThread thread_;
 
     std::string tlp_request(std::string); // static
     void update_status(); // static
