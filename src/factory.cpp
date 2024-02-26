@@ -86,6 +86,7 @@
 #endif
 #if defined(__linux__)
 #include "modules/bluetooth.hpp"
+#include "modules/tlp.hpp"
 #endif
 #ifdef HAVE_LOGIND_INHIBITOR
 #include "modules/inhibitor.hpp"
@@ -281,6 +282,9 @@ waybar::AModule* waybar::Factory::makeModule(const std::string& name,
 #if defined(__linux__)
     if (ref == "bluetooth") {
       return new waybar::modules::Bluetooth(id, config_[name]);
+    }
+    if (ref == "tlp") {
+      return new waybar::modules::TLP(id, config_[name]);
     }
 #endif
 #ifdef HAVE_LOGIND_INHIBITOR

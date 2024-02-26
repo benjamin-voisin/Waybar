@@ -13,6 +13,7 @@
 - Local time
 - Battery
 - UPower
+- TLP
 - Network
 - Bluetooth
 - Pulseaudio
