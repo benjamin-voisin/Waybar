@@ -68,7 +68,7 @@ std::string waybar::modules::TLP::tlpmode_tostring(bool tlpmode) {
     return "auto";
 }
 std::string waybar::modules::TLP::tlpmode_tostring() {
-  return tlpstat_tostring(tlpmode_);
+  return tlpmode_tostring(tlpmode_);
 }
 
 std::string waybar::modules::TLP::format(std::string format) {
