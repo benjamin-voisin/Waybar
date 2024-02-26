@@ -19,7 +19,10 @@ waybar::modules::TLP::~TLP() {}
 std::string waybar::modules::TLP::tlp_request(std::string command) {
   waybar::util::command::res res = waybar::util::command::exec(command, "TLP");
   if (res.exit_code) {
-    throw std::runtime_error("Unable to use tlp-stat!");
+    throw std::runtime_error(
+      fmt::format(fmt::runtime("Unable to use `{cmd}`!"),
+                  fmt::arg("cmd", command)
+      ));
   }
   return res.out;
 }
