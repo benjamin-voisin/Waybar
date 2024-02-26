@@ -32,19 +32,23 @@ void waybar::modules::TLP::update_status() {
   if( status == "AC" ) {
     tlpstat_  = true;
     tlpmode_ = false;
-  }
-  if( status == "AC (manual)" ) {
+  } 
+  else if( status == "AC (manual)" ) {
     tlpstat_  = true;
     tlpmode_ = true;
   }
-  if( status == "battery" ) {
+  else if( status == "battery" ) {
     tlpstat_  = false;
     tlpmode_ = false;
   }
-  if( status == "battery (manual)" ) {
+  else if( status == "battery (manual)" ) {
     tlpstat_  = false;
     tlpmode_ = true;
   }
+  else throw std::runtime_error(
+      fmt::format(fmt::runtime("Unable to recognize tlp-stat `{status}`!"),
+                  fmt::arg("status", status)
+  ));
 }
 
 std::string waybar::modules::TLP::tlpstat_tostring(bool tlpstat) {
