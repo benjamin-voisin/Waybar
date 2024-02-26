@@ -81,7 +81,7 @@ std::string waybar::modules::TLP::format(std::string format) {
 
 auto waybar::modules::TLP::update() -> void {
   update_status();
-  
+
   label_.get_style_context()->remove_class(tlpmode_tostring(!tlpmode_));
   label_.get_style_context()->remove_class(tlpstat_tostring(!tlpstat_));
   label_.get_style_context()->add_class(tlpmode_tostring());
@@ -119,6 +119,7 @@ bool waybar::modules::TLP::handleToggle(GdkEventButton* const& e) {
     toggleStatus();
   }
 
+  update();
   ALabel::handleToggle(e);
   return true;
 }
