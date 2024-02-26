@@ -91,7 +91,7 @@ auto waybar::modules::TLP::update() -> void {
   if (tooltipEnabled()) {
     auto config = config_["tooltip-format"];
     auto tooltip_format = config.isString() ? config.asString() : DEFAULT_FORMAT;
-    label_.set_tooltip_markup(tooltip_format);
+    label_.set_tooltip_markup(format(tooltip_format));
   }
   // Call parent update
   ALabel::update();
