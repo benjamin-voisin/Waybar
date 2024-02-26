@@ -32,7 +32,7 @@ void waybar::modules::TLP::update_status() {
   if( status == "AC" ) {
     tlpstat_  = true;
     tlpmode_ = false;
-  } 
+  }
   else if( status == "AC (manual)" ) {
     tlpstat_  = true;
     tlpmode_ = true;
@@ -51,10 +51,30 @@ void waybar::modules::TLP::update_status() {
   ));
 }
 
+void waybar::modules::TLP::update_style() {
+
+  label_.get_style_context()->remove_class(tlpmode_tostring(!tlpmode_));
+  label_.get_style_context()->remove_class(tlpstat_tostring(!tlpstat_));
+  label_.get_style_context()->add_class(tlpmode_tostring());
+  label_.get_style_context()->add_class(tlpstat_tostring());
+
+
+  label_.set_markup(format(DEFAULT_FORMAT));
+
+  if (tooltipEnabled()) {
+    auto config = config_["tooltip-format"];
+    auto tooltip_format = config.isString() ? config.asString() : DEFAULT_FORMAT;
+    label_.set_tooltip_markup(format(tooltip_format));
+  }
+
+  // Call parent update
+  ALabel::update();
+}
+
 std::string waybar::modules::TLP::tlpstat_tostring(bool tlpstat) {
   if (tlpstat)
     return "ac";
-  else 
+  else
     return "bat";
 }
 std::string waybar::modules::TLP::tlpstat_tostring() {
@@ -64,7 +84,7 @@ std::string waybar::modules::TLP::tlpstat_tostring() {
 std::string waybar::modules::TLP::tlpmode_tostring(bool tlpmode) {
   if (tlpmode)
     return "manual";
-  else 
+  else
     return "auto";
 }
 std::string waybar::modules::TLP::tlpmode_tostring() {
@@ -82,33 +102,28 @@ std::string waybar::modules::TLP::format(std::string format) {
 auto waybar::modules::TLP::update() -> void {
   update_status();
 
-  label_.get_style_context()->remove_class(tlpmode_tostring(!tlpmode_));
-  label_.get_style_context()->remove_class(tlpstat_tostring(!tlpstat_));
-  label_.get_style_context()->add_class(tlpmode_tostring());
-  label_.get_style_context()->add_class(tlpstat_tostring());
+  update_style();
 
-
-  label_.set_markup(format(format_));
-  
-  if (tooltipEnabled()) {
-    auto config = config_["tooltip-format"];
-    auto tooltip_format = config.isString() ? config.asString() : DEFAULT_FORMAT_ALT;
-    label_.set_tooltip_markup(format(tooltip_format));
-  }
-  // Call parent update
-  ALabel::update();
 }
 
 void waybar::modules::TLP::toggleStatus() {
   if (tlpmode_) {
     // if on MANUAL mode put AUTO
+    tlpmode_ = false;
+    update_style();
     tlp_request("sudo tlp start");
   } else {
     if (tlpstat_) {
       // if on AUTO AC mode put MANUAL BATTERY mode
+      tlpstat_ = true;
+      tlpmode_ = true;
+      update_style();
       tlp_request("sudo tlp bat");
     } else {
       // if on AUTO BATTERY mode put MANUAL AC mode
+      tlpstat_ = false;
+      tlpmode_ = true;
+      update_style();
       tlp_request("sudo tlp ac");
     }
   }
