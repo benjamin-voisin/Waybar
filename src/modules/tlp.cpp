@@ -2,7 +2,7 @@
 #include "util/command.hpp"
 
 waybar::modules::TLP::TLP(const std::string& id, const Json::Value& config)
-    : waybar::ALabel(config, "tlp", id, DEFAULT_FORMAT, 2, false, false, false), tlpstat_(false), tlpmode_(false)
+    : ALabel(config, "tlp", id, "{status} ({mode})", 2), tlpstat_(false), tlpmode_(false)
 {
   tlp_request("tlp-stat --version");
 
@@ -59,11 +59,11 @@ void waybar::modules::TLP::update_style() {
   label_.get_style_context()->add_class(tlpstat_tostring());
 
 
-  label_.set_markup(format(DEFAULT_FORMAT));
+  label_.set_markup(format(format_));
 
   if (tooltipEnabled()) {
     auto config = config_["tooltip-format"];
-    auto tooltip_format = config.isString() ? config.asString() : DEFAULT_FORMAT;
+    auto tooltip_format = config.isString() ? config.asString() : format_;
     label_.set_tooltip_markup(format(tooltip_format));
   }
 
