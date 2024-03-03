@@ -21,16 +21,14 @@ waybar::modules::TLP::~TLP() {}
 std::string waybar::modules::TLP::tlp_request(std::string command) {
   waybar::util::command::res res = waybar::util::command::exec(command, "TLP");
   if (res.exit_code) {
-    throw std::runtime_error(
-      fmt::format(fmt::runtime("Unable to use `{cmd}`!"),
-                  fmt::arg("cmd", command)
-      ));
+    return "";
   }
   return res.out;
 }
 
 void waybar::modules::TLP::update_status() {
   std::string status = tlp_request("tlp-stat -m -q");
+  if ( status.empty() ) return;
   if( status == "AC" ) {
     tlpstat_  = true;
     tlpmode_ = false;
