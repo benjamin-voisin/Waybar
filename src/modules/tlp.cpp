@@ -107,18 +107,32 @@ auto waybar::modules::TLP::update() -> void {
 }
 
 void waybar::modules::TLP::toggleStatus() {
+  std::string cmd = "";
+  if (config_["sudo"] == "true") {
+    cmd = "sudo ";
+  } else {
+    cmd = "pkexec ";
+  }
   if (tlpmode_) {
     // if on MANUAL mode put AUTO
-    tlp_request("sudo tlp start");
+    tlpmode_ = false;
+    tlpstat_ = false;
+    cmd = cmd + "tlp start";
   } else {
+    tlpmode_ = true;
     if (tlpstat_) {
       // if on AUTO AC mode put MANUAL BATTERY mode
-      tlp_request("sudo tlp bat");
+      tlpstat_ = false;
+      cmd = cmd + "tlp bat";
     } else {
       // if on AUTO BATTERY mode put MANUAL AC mode
-      tlp_request("sudo tlp ac");
+      tlpstat_ = true;
+      cmd = cmd + "tlp ac";
     }
   }
+  update_style();
+  tlp_request(cmd);
+
 }
 
 bool waybar::modules::TLP::handleToggle(GdkEventButton* const& e) {
