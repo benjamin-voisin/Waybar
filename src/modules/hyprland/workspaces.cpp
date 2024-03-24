@@ -83,6 +83,11 @@ auto Workspaces::parseConfig(const Json::Value &config) -> void {
     m_activeOnly = configActiveOnly.asBool();
   }
 
+  auto configMoveToMonitor = config_["move-to-monitor"];
+  if (configMoveToMonitor.isBool()) {
+    m_moveToMonitor = configMoveToMonitor.asBool();
+  }
+
   auto configSortBy = config_["sort-by"];
   if (configSortBy.isString()) {
     auto sortByStr = configSortBy.asString();
@@ -208,6 +213,7 @@ void Workspaces::doUpdate() {
   }
 
   spdlog::trace("Updating workspace states");
+  auto updated_workspaces = gIPC->getSocket1JsonReply("workspaces");
   for (auto &workspace : m_workspaces) {
     // active
     workspace->setActive(workspace->name() == m_activeWorkspaceName ||
@@ -226,6 +232,19 @@ void Workspaces::doUpdate() {
     if (m_withIcon) {
       workspaceIcon = workspace->selectIcon(m_iconsMap);
     }
+
+    // update m_output
+    auto updated_workspace =
+        std::find_if(updated_workspaces.begin(), updated_workspaces.end(), [&workspace](auto &w) {
+          auto wNameRaw = w["name"].asString();
+          auto wName = wNameRaw.starts_with("special:") ? wNameRaw.substr(8) : wNameRaw;
+          return wName == workspace->name();
+        });
+
+    if (updated_workspace != updated_workspaces.end()) {
+      workspace->setOutput((*updated_workspace)["monitor"].asString());
+    }
+
     workspace->update(m_format, workspaceIcon);
   }
 
@@ -349,7 +368,7 @@ void Workspaces::onWorkspaceCreated(std::string const &workspaceName,
             (showSpecial() || !name.starts_with("special")) && !isDoubleSpecial(workspaceName)) {
           for (Json::Value const &rule : workspaceRules) {
             if (rule["workspaceString"].asString() == workspaceName) {
-              workspaceJson["persistent"] = rule["persistent"].asBool();
+              workspaceJson["persistent-rule"] = rule["persistent"].asBool();
               break;
             }
           }
@@ -587,8 +606,7 @@ std::optional<std::string> Workspace::closeWindow(WindowAddress const &addr) {
 void Workspaces::createWorkspace(Json::Value const &workspace_data,
                                  Json::Value const &clients_data) {
   auto workspaceName = workspace_data["name"].asString();
-  spdlog::debug("Creating workspace {}, persistent: {}", workspaceName,
-                workspace_data["persistent"].asBool() ? "true" : "false");
+  spdlog::debug("Creating workspace {}", workspaceName);
 
   // avoid recreating existing workspaces
   auto workspace = std::find_if(
@@ -600,7 +618,22 @@ void Workspaces::createWorkspace(Json::Value const &workspace_data,
 
   if (workspace != m_workspaces.end()) {
     // don't recreate workspace, but update persistency if necessary
-    (*workspace)->setPersistent(workspace_data["persistent"].asBool());
+    const auto keys = workspace_data.getMemberNames();
+
+    const auto *k = "persistent-rule";
+    if (std::find(keys.begin(), keys.end(), k) != keys.end()) {
+      spdlog::debug("Set dynamic persistency of workspace {} to: {}", workspaceName,
+                    workspace_data[k].asBool() ? "true" : "false");
+      (*workspace)->setPersistentRule(workspace_data[k].asBool());
+    }
+
+    k = "persistent-config";
+    if (std::find(keys.begin(), keys.end(), k) != keys.end()) {
+      spdlog::debug("Set config persistency of workspace {} to: {}", workspaceName,
+                    workspace_data[k].asBool() ? "true" : "false");
+      (*workspace)->setPersistentConfig(workspace_data[k].asBool());
+    }
+
     return;
   }
 
@@ -624,8 +657,8 @@ void Workspaces::removeWorkspace(std::string const &name) {
     return;
   }
 
-  if ((*workspace)->isPersistent()) {
-    spdlog::trace("Not removing persistent workspace {}", name);
+  if ((*workspace)->isPersistentConfig()) {
+    spdlog::trace("Not removing config persistent workspace {}", name);
     return;
   }
 
@@ -633,7 +666,7 @@ void Workspaces::removeWorkspace(std::string const &name) {
   m_workspaces.erase(workspace);
 }
 
-Json::Value createPersistentWorkspaceData(std::string const &name, std::string const &monitor) {
+Json::Value createMonitorWorkspaceData(std::string const &name, std::string const &monitor) {
   spdlog::trace("Creating persistent workspace: {} on monitor {}", name, monitor);
   Json::Value workspaceData;
   try {
@@ -646,7 +679,6 @@ Json::Value createPersistentWorkspaceData(std::string const &name, std::string c
   workspaceData["name"] = name;
   workspaceData["monitor"] = monitor;
   workspaceData["windows"] = 0;
-  workspaceData["persistent"] = true;
   return workspaceData;
 }
 
@@ -699,7 +731,8 @@ void Workspaces::loadPersistentWorkspacesFromConfig(Json::Value const &clientsJs
   }
 
   for (auto const &workspace : persistentWorkspacesToCreate) {
-    auto const workspaceData = createPersistentWorkspaceData(workspace, m_bar.output->name);
+    auto workspaceData = createMonitorWorkspaceData(workspace, m_bar.output->name);
+    workspaceData["persistent-config"] = true;
     m_workspacesToCreate.emplace_back(workspaceData, clientsJson);
   }
 }
@@ -724,7 +757,8 @@ void Workspaces::loadPersistentWorkspacesFromWorkspaceRules(const Json::Value &c
     // 3. no monitor is specified in the rule => assume it needs to be persistent on every monitor
     if (allOutputs() || m_bar.output->name == monitor || monitor.empty()) {
       // => persistent workspace should be shown on this monitor
-      auto workspaceData = createPersistentWorkspaceData(workspace, m_bar.output->name);
+      auto workspaceData = createMonitorWorkspaceData(workspace, m_bar.output->name);
+      workspaceData["persistent-rule"] = true;
       m_workspacesToCreate.emplace_back(workspaceData, clientsJson);
     } else {
       m_workspacesToRemove.emplace_back(workspace);
@@ -774,10 +808,9 @@ void Workspaces::initializeWorkspaces() {
   if (m_persistentWorkspaceConfig.isObject()) {
     // a persistent workspace config is defined, so use that instead of workspace rules
     loadPersistentWorkspacesFromConfig(clientsJson);
-  } else {
-    // no persistent workspaces config defined, use Hyprland's workspace rules
-    loadPersistentWorkspacesFromWorkspaceRules(clientsJson);
   }
+  // load Hyprland's workspace rules
+  loadPersistentWorkspacesFromWorkspaceRules(clientsJson);
 }
 
 void Workspaces::extendOrphans(int workspaceId, Json::Value const &clientsJson) {
@@ -812,7 +845,8 @@ Workspace::Workspace(const Json::Value &workspace_data, Workspaces &workspace_ma
       m_output(workspace_data["monitor"].asString()),  // TODO:allow using monitor desc
       m_windows(workspace_data["windows"].asInt()),
       m_isActive(true),
-      m_isPersistent(workspace_data["persistent"].asBool()) {
+      m_isPersistentRule(workspace_data["persistent-rule"].asBool()),
+      m_isPersistentConfig(workspace_data["persistent-config"].asBool()) {
   if (m_name.starts_with("name:")) {
     m_name = m_name.substr(5);
   } else if (m_name.starts_with("special")) {
@@ -861,6 +895,7 @@ void Workspace::update(const std::string &format, const std::string &icon) {
   addOrRemoveClass(styleContext, isPersistent(), "persistent");
   addOrRemoveClass(styleContext, isUrgent(), "urgent");
   addOrRemoveClass(styleContext, isVisible(), "visible");
+  addOrRemoveClass(styleContext, m_workspaceManager.getBarOutput() == output(), "hosting-monitor");
 
   std::string windows;
   auto windowSeparator = m_workspaceManager.getWindowSeparator();
@@ -1004,9 +1039,17 @@ bool Workspace::handleClicked(GdkEventButton *bt) const {
   if (bt->type == GDK_BUTTON_PRESS) {
     try {
       if (id() > 0) {  // normal
-        gIPC->getSocket1Reply("dispatch workspace " + std::to_string(id()));
+        if (m_workspaceManager.moveToMonitor()) {
+          gIPC->getSocket1Reply("dispatch focusworkspaceoncurrentmonitor " + std::to_string(id()));
+        } else {
+          gIPC->getSocket1Reply("dispatch workspace " + std::to_string(id()));
+        }
       } else if (!isSpecial()) {  // named (this includes persistent)
-        gIPC->getSocket1Reply("dispatch workspace name:" + name());
+        if (m_workspaceManager.moveToMonitor()) {
+          gIPC->getSocket1Reply("dispatch focusworkspaceoncurrentmonitor name:" + name());
+        } else {
+          gIPC->getSocket1Reply("dispatch workspace name:" + name());
+        }
       } else if (id() != -99) {  // named special
         gIPC->getSocket1Reply("dispatch togglespecialworkspace " + name());
       } else {  // special

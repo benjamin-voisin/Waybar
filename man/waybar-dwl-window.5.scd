@@ -1,16 +1,16 @@
-waybar-sway-window(5)
+waybar-dwl-window(5)
 
 # NAME
 
-waybar - sway window module
+waybar - dwl window module
 
 # DESCRIPTION
 
-The *window* module displays the title of the currently focused window in Sway
+The *window* module displays the title of the currently focused window in DWL
 
 # CONFIGURATION
 
-Addressed by *sway/window*
+Addressed by *dwl/window*
 
 *format*: ++
 	typeof: string ++
@@ -70,25 +70,6 @@ Addressed by *sway/window*
 	default: true ++
 	Option to disable tooltip on hover.
 
-*all-outputs*: ++
-	typeof: bool ++
-	default: false ++
-	Option to show the focused window along with its workspace styles on all outputs.
-
-*offscreen-css*: ++
-	typeof: bool ++
-	default: false ++
-	Only effective when all-outputs is true. Adds style according to present windows on unfocused outputs instead of showing the focused window and style.
-
-*offscreen-css-text*: ++
-	typeof: string ++
-	Only effective when both all-outputs and offscreen-style are true. On screens currently not focused, show the given text along with that workspace styles.
-
-*show-focused-workspace-name*: ++
-	typeof: bool ++
-	default: false ++
-	If the workspace itself is focused and the workspace contains nodes or floating_nodes, show the workspace name. If not set, text remains empty but styles according to nodes in the workspace are still applied.
-
 *rewrite*: ++
 	typeof: object ++
 	Rules to rewrite the module format output. See *rewrite rules*.
@@ -109,8 +90,7 @@ Addressed by *sway/window*
 
 *{app_id}*: The app_id of the focused window.
 
-*{shell}*: The shell of the focused window. It's 'xwayland' when the window is
-running through xwayland, otherwise, it's 'xdg-shell'.
+*{layout}*: The layout of the focused window.
 
 # REWRITE RULES
 
@@ -127,7 +107,7 @@ Invalid expressions (e.g., mismatched parentheses) are skipped.
 # EXAMPLES
 
 ```
-"sway/window": {
+"dwl/window": {
 	"format": "{}",
 	"max-length": 50,
 	"rewrite": {
@@ -136,18 +116,3 @@ Invalid expressions (e.g., mismatched parentheses) are skipped.
 	}
 }
 ```
-
-# STYLE
-
-- *#window*
-
-The following classes are applied to the entire Waybar rather than just the
-window widget:
-
-- *window#waybar.empty* When no windows are in the workspace, or screen is not focused and offscreen-css option is not set
-- *window#waybar.solo* When one tiled window is in the workspace
-- *window#waybar.floating* When there are only floating windows in the workspace
-- *window#waybar.stacked* When there is more than one window in the workspace and the workspace layout is stacked
-- *window#waybar.tabbed* When there is more than one window in the workspace and the workspace layout is tabbed
-- *window#waybar.tiled* When there is more than one window in the workspace and the workspace layout is splith or splitv
-- *window#waybar.<app_id>* Where *app_id* is the app_id or *instance* name like (*chromium*) of the only window in the workspace

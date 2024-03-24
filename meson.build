@@ -1,6 +1,6 @@
 project(
     'waybar', 'cpp', 'c',
-    version: '0.9.24',
+    version: '0.10.0',
     license: 'MIT',
     meson_version: '>= 0.59.0',
     default_options : [
@@ -92,7 +92,7 @@ libevdev = dependency('libevdev', required: get_option('libevdev'))
 libmpdclient = dependency('libmpdclient', required: get_option('mpd'))
 xkbregistry = dependency('xkbregistry')
 libjack = dependency('jack', required: get_option('jack'))
-libwireplumber = dependency('wireplumber-0.4', required: get_option('wireplumber'))
+libwireplumber = dependency('wireplumber-0.5', required: get_option('wireplumber'))
 
 libsndio = compiler.find_library('sndio', required: get_option('sndio'))
 if libsndio.found()
@@ -212,6 +212,7 @@ if is_linux
         'src/modules/cpu_usage/linux.cpp',
         'src/modules/memory/common.cpp',
         'src/modules/memory/linux.cpp',
+        'src/modules/power_profiles_daemon.cpp',
         'src/modules/systemd_failed_units.cpp',
         'src/modules/tlp.cpp',
     )
@@ -222,6 +223,7 @@ if is_linux
         'man/waybar-cpu.5.scd',
         'man/waybar-memory.5.scd',
         'man/waybar-systemd-failed-units.5.scd',
+        'man/waybar-power-profiles-daemon.5.scd',
     )
 elif is_dragonfly or is_freebsd or is_netbsd or is_openbsd
     add_project_arguments('-DHAVE_CPU_BSD', language: 'cpp')
@@ -292,7 +294,9 @@ endif
 if true
     add_project_arguments('-DHAVE_DWL', language: 'cpp')
     src_files += files('src/modules/dwl/tags.cpp')
+    src_files += files('src/modules/dwl/window.cpp')
     man_files += files('man/waybar-dwl-tags.5.scd')
+    man_files += files('man/waybar-dwl-window.5.scd')
 endif
 
 if true
@@ -519,8 +523,8 @@ executable(
 )
 
 install_data(
-    './resources/config',
-    './resources/style.css',
+    'resources/config.jsonc',
+    'resources/style.css',
     install_dir: sysconfdir / 'xdg/waybar'
 )
 
@@ -578,4 +582,3 @@ if clangtidy.found()
             '-p', meson.project_build_root()
         ] + src_files)
 endif
-
