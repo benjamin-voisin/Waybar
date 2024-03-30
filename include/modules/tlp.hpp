@@ -27,7 +27,10 @@ class TLP : public ALabel {
     std::string format(std::string format);
 
     void toggleStatus(); // static
-    bool handleToggle(GdkEventButton* const& e) override;
+    bool handleClick(GdkEventButton* const& e);
+
+    void showMenu(GdkEventButton* const& e);
+    void quit();
 
 };
 

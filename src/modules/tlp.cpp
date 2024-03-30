@@ -1,6 +1,8 @@
 #include "modules/tlp.hpp"
 #include "util/command.hpp"
 
+#include <gtkmm.h>
+
 waybar::modules::TLP::TLP(const std::string& id, const Json::Value& config)
     : ALabel(config, "tlp", id, "{status} ({mode})", 2), tlpstat_(false), tlpmode_(false)
 {
@@ -8,7 +10,7 @@ waybar::modules::TLP::TLP(const std::string& id, const Json::Value& config)
 
   event_box_.add_events(Gdk::BUTTON_PRESS_MASK);
   event_box_.signal_button_press_event().connect(
-      sigc::mem_fun(*this, &TLP::handleToggle));
+      sigc::mem_fun(*this, &TLP::handleClick));
 
   thread_ = [this] {
     dp.emit();
@@ -133,11 +135,20 @@ void waybar::modules::TLP::toggleStatus() {
 
 }
 
-bool waybar::modules::TLP::handleToggle(GdkEventButton* const& e) {
+void waybar::modules::TLP::showMenu(GdkEventButton* const& e) {
+    g_print("Right-click detected\n");  // Debug print
+}
+
+bool waybar::modules::TLP::handleClick(GdkEventButton* const& e) {
   if (e->button == 1) {
     toggleStatus();
+  }
+  else if (e->button == 3) {
+    showMenu(e);
   }
 
   ALabel::handleToggle(e);
   return true;
 }
+
+
