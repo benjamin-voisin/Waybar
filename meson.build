@@ -160,6 +160,7 @@ src_files = files(
     'src/factory.cpp',
     'src/AModule.cpp',
     'src/ALabel.cpp',
+    'src/AMenu.cpp',
     'src/AIconLabel.cpp',
     'src/AAppIconLabel.cpp',
     'src/modules/custom.cpp',

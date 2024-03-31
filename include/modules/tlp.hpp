@@ -1,11 +1,11 @@
 #pragma once
 
-#include "ALabel.hpp"
+#include "AMenu.hpp"
 #include "util/sleeper_thread.hpp"
 
 namespace waybar::modules {
 
-class TLP : public ALabel {
+class TLP : public AMenu{
   public:
     TLP(const std::string&, const Json::Value&);
     virtual ~TLP();

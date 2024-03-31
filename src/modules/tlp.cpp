@@ -4,7 +4,7 @@
 #include <gtkmm.h>
 
 waybar::modules::TLP::TLP(const std::string& id, const Json::Value& config)
-    : ALabel(config, "tlp", id, "{status} ({mode})", 2), tlpstat_(false), tlpmode_(false)
+    : AMenu(config, "tlp", id, "{status} ({mode})", 2), tlpstat_(false), tlpmode_(false)
 {
   tlp_request("tlp-stat --version");
 
@@ -70,7 +70,7 @@ void waybar::modules::TLP::update_style() {
   }
 
   // Call parent update
-  ALabel::update();
+  AMenu::update();
 }
 
 std::string waybar::modules::TLP::tlpstat_tostring(bool tlpstat) {
@@ -147,7 +147,7 @@ bool waybar::modules::TLP::handleClick(GdkEventButton* const& e) {
     showMenu(e);
   }
 
-  ALabel::handleToggle(e);
+  AMenu::handleToggle(e);
   return true;
 }
 
